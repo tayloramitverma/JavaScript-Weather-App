@@ -134,10 +134,25 @@
             </style>
     </head>
     <body class='snippet-body'>
+        
         <div class="page-content page-container" id="page-content">
             <div class="padding">
                 <div class="row container d-flex justify-content-center">
                     <div class="col-lg-8 grid-margin stretch-card">
+                        <div class="alert alert-danger" style="display:none" role="alert" id="errorMessage">
+                        </div>
+                        <form class="form-inline">
+                            <div class="form-group mb-2">
+                                <label for="latitude" class="sr-only">Latitude</label>
+                                <input type="text" class="form-control" id="latitude" value="26.9124">
+                            </div>
+                            <div class="form-group mx-sm-3 mb-2">
+                                <label for="longitude" class="sr-only">Longitude</label>
+                                <input type="text" class="form-control" id="longitude" value="75.7873">
+                            </div>
+                            <button type="button" id="checkWeather" class="btn btn-primary mb-2">Check Weather</button>
+                        </form>
+
                         <!--weather card-->
                         <div class="card card-weather">
                             <div class="card-body" id="current_weather">
@@ -160,43 +175,85 @@
     <script type='text/javascript'>
         
         document.getElementById('week_weather').innerHTML = 'loading...';
-        var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        // Initial displaying default weather
+        let latitude = document.getElementById('latitude').value;
+        let longitude = document.getElementById('longitude').value;
 
-        fetch('http://api.openweathermap.org/data/2.5/onecall?lat=26.9124&lon=75.7873&units=metric&appid=e9c64818f9551211310596b72a2e389c&exclude=hourly,minutely,alerts')
-        .then(res=>res.json())
-        .then(finalres=>{
+        getWeather(latitude, longitude)
 
-            if(finalres.current){
-                let curretDate = new Date(finalres.current.dt).toUTCString();
-                let d = new Date(finalres.current.dt*1000);
-                let dayName = days[d.getDay()];
-                var currentWeather = `<div class="weather-date-location">
-                                    <h3>`+dayName+`</h3>
-                                    <p class="text-gray"> <span class="weather-date">`+curretDate+`</span> <span class="weather-location">`+finalres.timezone+`</span> </p>
-                                </div>
-                                <div class="weather-data d-flex">
-                                    <div class="mr-auto">
-                                        <h4 class="display-3">`+finalres.current.temp+` <span class="symbol">°</span>C</h4>
-                                        <p> `+finalres.current.weather[0].main+` </p>
-                                    </div>
-                                </div>`;
+        // Weather based on latitude & Longitude
+        const actionBtn = document.getElementById('checkWeather');
+        const errorMessage = document.getElementById('errorMessage');
+        actionBtn.addEventListener('click', e => {
+            actionBtn.innerText = 'Processing..';
+            let latitude = document.getElementById('latitude').value;
+            let longitude = document.getElementById('longitude').value;
 
-                document.getElementById('current_weather').innerHTML = currentWeather;
-            }
+            let regValidate = new RegExp('^-?([1-8]?[1-9]|[1-9]0)\\.{1}\\d{1,6}');
 
-            var weatherData = '';
-            if(finalres.daily){
-                for(let i=0;i<finalres.daily.length-1;i++){
-                    let d = new Date(finalres.daily[i].dt*1000);
-                    let dayName = days[d.getDay()];
-                    weatherData += `<div class="weakly-weather-item">
-                                        <p class="mb-1"> `+dayName+` </p> <img src="http://openweathermap.org/img/w/`+finalres.daily[i].weather[0].icon+`.png" width="32" height="32" alt="`+dayName+`">
-                                        <p class="mb-0"> `+finalres.daily[i].temp.min+`° - `+finalres.daily[i].temp.max+`° </p>
-                                    </div>` 
+            if(latitude != '' && longitude != ''){
+                if(regValidate.test(latitude) && regValidate.test(longitude)){
+                    getWeather(latitude, longitude);
+                }else{
+                    errorMessage.innerText = 'Your entered latitude and longitude is not valid!';
+                    errorMessage.style.display = 'block';
+                    actionBtn.innerText = 'Re-Check Weather';
                 }
-                document.getElementById('week_weather').innerHTML = weatherData;
+            }else{
+                errorMessage.innerText = 'Please enter valid latitude and longitude!';
+                errorMessage.style.display = 'block';
+                actionBtn.innerText = 'Re-Check Weather';
             }
-
+            
         });
+
+        // fetching weather using rest service
+        function getWeather(latitude, longitude){
+
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const weatherApiCode = 'e9c64818f9551211310596b72a2e389c';
+
+            fetch('https://api.openweathermap.org/data/2.5/onecall?lat='+latitude+'&lon='+longitude+'&units=metric&appid='+weatherApiCode+'&exclude=hourly,minutely,alerts')
+            .then(res=>res.json())
+            .then(finalres=>{
+                errorMessage.style.display = 'none';
+                if(finalres.current){
+                    let curretDate = new Date(finalres.current.dt).toUTCString();
+                    let d = new Date(finalres.current.dt*1000);
+                    let dayName = days[d.getDay()];
+                    var currentWeather = `<div class="weather-date-location">
+                                        <h3>`+dayName+`</h3>
+                                        <p class="text-gray"> <span class="weather-date">`+curretDate+`</span> <span class="weather-location">`+finalres.timezone+`</span> </p>
+                                    </div>
+                                    <div class="weather-data d-flex">
+                                        <div class="mr-auto">
+                                            <h4 class="display-3">`+finalres.current.temp+` <span class="symbol">°</span>C</h4>
+                                            <p> `+finalres.current.weather[0].main+` </p>
+                                        </div>
+                                    </div>`;
+
+                    document.getElementById('current_weather').innerHTML = currentWeather;
+                }
+
+                var weatherData = '';
+                if(finalres.daily){
+                    for(let i=0;i<finalres.daily.length-1;i++){
+                        let d = new Date(finalres.daily[i].dt*1000);
+                        let dayName = days[d.getDay()];
+                        weatherData += `<div class="weakly-weather-item">
+                                            <p class="mb-1"> `+dayName+` </p> <img src="http://openweathermap.org/img/w/`+finalres.daily[i].weather[0].icon+`.png" width="32" height="32" alt="`+dayName+`">
+                                            <p class="mb-0"> `+finalres.daily[i].temp.min+`° - `+finalres.daily[i].temp.max+`° </p>
+                                        </div>` 
+                    }
+                    document.getElementById('week_weather').innerHTML = weatherData;
+                }
+                actionBtn.innerText = 'Check Weather';
+
+            }).catch(err => {
+                errorMessage.innerText = 'There is something wrong with your weather api!';
+                errorMessage.style.display = 'blcok';
+            });
+        }
+
     </script>
 </html>
