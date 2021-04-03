@@ -211,7 +211,7 @@
         function getWeather(latitude, longitude){
 
             const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            const weatherApiCode = 'e9c64818f9551211310596b72a2e389c';
+            const weatherApiCode = '*********************';
 
             fetch('https://api.openweathermap.org/data/2.5/onecall?lat='+latitude+'&lon='+longitude+'&units=metric&appid='+weatherApiCode+'&exclude=hourly,minutely,alerts')
             .then(res=>res.json())
